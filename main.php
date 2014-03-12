@@ -7,8 +7,9 @@ use Monolog\Logger;
 include_once("ArgumentsRunParameters.php");
 include_once("BaseInstaller.php");
 include_once("DatabaseConnection.php");
+include_once("WritableDirState.php");
 
-$log = new Logger('name');
+$log = new Logger('main');
 
 $json = file_get_contents("config.json");
 $data = json_decode($json, TRUE);
@@ -18,6 +19,8 @@ $dbRootUser = $data['db-root-user'];
 $dbRootPassword = $data['db-root-password'];
 $dbHost = $data['db-host'];
 $documentRoot = $data['document-root'];
+$phpUser = $data['php-user'];
+$phpGroup = $data['php-group'];
 
 foreach ($drupalInstalls as $key => $value) {
     $main_drupal_dir = $documentRoot . '/' . $key;
@@ -148,6 +151,10 @@ foreach ($drupalInstalls as $key => $value) {
     $baseInstaller = new BaseInstaller($runParams, $dbConn, $drupalAdminUser, 
             $drupalAdminPassword, $main_drupal_dir, $log, $mysqli);
     $baseInstaller->execute();
+
+    $writableUploadDirState = new WritableDirState($runParams, $main_drupal_dir . '/sites/default/files', $phpUser, $phpGroup, $log);
+    $writableUploadDirState->execute();
+
     $mysqli->close();
 }
 
